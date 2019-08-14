@@ -175,8 +175,8 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
                 }
 
                 RETURN_ON_ERROR(readBlock(column.dataFile.pFile, buf, hwm));
-
-                for (j = 0; j < totalRowPerBlock; j++)
+                
+                        for (j = 0; j < totalRowPerBlock; j++)
                 {
                     if (isEmptyRow(buf, j, column))
                     {
@@ -1040,7 +1040,7 @@ int ColumnOp::fillColumn(const TxnID& txnid, Column& column, Column& refCol, voi
                         startColFbo++;
                         colBufOffset = 0;
                     }
-
+                    
                     while (((refBufOffset + refCol.colWidth) <= BYTE_PER_BLOCK) &&
                             ((colBufOffset + column.colWidth) <= BYTE_PER_BLOCK))
                     {
@@ -1056,7 +1056,8 @@ int ColumnOp::fillColumn(const TxnID& txnid, Column& column, Column& refCol, voi
                         }
                         else if (column.compressionType != 0) //@Bug 3866, fill the empty row value for compressed chunk
                         {
-                            memcpy(colBuf + colBufOffset, &emptyVal, column.colWidth);
+                            for(int b = 0, w = column.colWidth; b < column.colWidth; b += 8, w = 8) //FIXME for no loop!
+                                memcpy(colBuf + colBufOffset + b, &emptyVal, w);
                             dirty = true;
                         }
 
@@ -1383,16 +1384,21 @@ void ColumnOp::initColumn(Column& column) const
  ***********************************************************/
 bool ColumnOp::isEmptyRow(unsigned char* buf, int offset, const Column& column)
 {
-    bool emptyFlag = true;
-    uint64_t  curVal, emptyVal;
+//    bool emptyFlag = true;
+//    uint64_t  curVal, emptyVal;
+//
+//    memcpy(&curVal, buf + offset * column.colWidth, column.colWidth);
+//    emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);
+//
+//    if (/*curVal != emptyVal*/memcmp(&curVal, &emptyVal, column.colWidth))
+//        emptyFlag = false;
+//
+//    return emptyFlag;
 
-    memcpy(&curVal, buf + offset * column.colWidth, column.colWidth);
-    emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);
-
-    if (/*curVal != emptyVal*/memcmp(&curVal, &emptyVal, column.colWidth))
-        emptyFlag = false;
-
-    return emptyFlag;
+    uint64_t emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);;
+    void *curVal = buf + offset * column.colWidth; 
+    uint64_t emptyVal4[4] = {emptyVal,emptyVal,emptyVal,emptyVal}; //uṕ to 32 Bytes
+    return memcmp(curVal, emptyVal4, column.colWidth)? false:true;  
 }
 
 /***********************************************************
@@ -1673,6 +1679,12 @@ int ColumnOp::writeRow(Column& curCol, uint64_t totalRow, const RID* rowIdArray,
                 //pOldVal = &((uint64_t *) oldValArray)[i];
                 break;
 
+            case WriteEngine::WR_BINARY:
+                if (!bDelete) pVal = (uint8_t*) valArray + i * curCol.colWidth;
+                
+                //pOldVal = (uint8_t*) oldValArray + i * curCol.colWidth;
+                break;
+                
             default  :
                 if (!bDelete) pVal = &((int*) valArray)[i];
 
@@ -1685,7 +1697,7 @@ int ColumnOp::writeRow(Column& curCol, uint64_t totalRow, const RID* rowIdArray,
 
         if (bDelete)
         {
-            emptyVal = getEmptyRowValue(curCol.colDataType, curCol.colWidth);
+            emptyVal = getEmptyRowValue(curCol.colDataType, curCol.colWidth);    
             pVal = &emptyVal;
         }
 
@@ -1907,7 +1919,8 @@ int ColumnOp::writeRows(Column& curCol, uint64_t totalRow, const RIDList& ridLis
         }
 
         // This is the write stuff
-        writeBufValue(dataBuf + dataBio, pVal, curCol.colWidth);
+        for(int b = 0, w = curCol.colWidth > 8 ? 8 : curCol.colWidth; b <  curCol.colWidth; b += 8) //FIXME for no loop
+            writeBufValue(dataBuf + dataBio + b, pVal, w);
 
         i++;
 

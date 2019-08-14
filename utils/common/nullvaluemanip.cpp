@@ -122,7 +122,10 @@ uint64_t getNullValue(CalpontSystemCatalog::ColDataType t, uint32_t colWidth)
 
         case CalpontSystemCatalog::UBIGINT:
             return joblist::UBIGINTNULL;
-
+  
+        case CalpontSystemCatalog::BINARY:
+            return joblist::BINARYNULL;
+                 
         case CalpontSystemCatalog::VARBINARY:
         default:
             ostringstream os;
@@ -233,6 +236,9 @@ int64_t getSignedNullValue(CalpontSystemCatalog::ColDataType t, uint32_t colWidt
         case CalpontSystemCatalog::LONGDOUBLE:
             return (int64_t)joblist::LONGDOUBLENULL;
 
+        case CalpontSystemCatalog::BINARY:
+            return (int64_t)joblist::BINARYNULL;
+            
         case CalpontSystemCatalog::VARBINARY:
         default:
             ostringstream os;

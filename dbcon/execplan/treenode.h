@@ -726,6 +726,10 @@ inline const std::string& TreeNode::getStrVal()
             break;
         }
 
+        case CalpontSystemCatalog::BINARY:
+        {
+            break;
+        }    
         default:
             throw logging::InvalidConversionExcept("TreeNode::getStrVal: Invalid conversion.");
     }
@@ -1059,6 +1063,7 @@ inline IDB_Decimal TreeNode::getDecimalVal()
 
         case CalpontSystemCatalog::VARBINARY:
         case CalpontSystemCatalog::BLOB:
+        case CalpontSystemCatalog::BINARY:    
             throw logging::InvalidConversionExcept("TreeNode::getDecimalVal: non-support conversion from binary string");
 
         case CalpontSystemCatalog::BIGINT:

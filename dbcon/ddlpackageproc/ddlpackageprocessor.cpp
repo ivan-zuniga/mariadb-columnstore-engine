@@ -247,6 +247,10 @@ execplan::CalpontSystemCatalog::ColDataType DDLPackageProcessor::convertDataType
         case ddlpackage::DDL_TEXT:
             colDataType = CalpontSystemCatalog::TEXT;
             break;
+        
+        case ddlpackage::DDL_BINARY:
+            colDataType = CalpontSystemCatalog::BINARY;
+            break;
 
         default:
             throw runtime_error("Unsupported datatype!");

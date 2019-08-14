@@ -698,6 +698,8 @@ bool LBIDList::CasualPartitionPredicate(const int64_t Min,
                     uint64_t val = *(int64_t*)MsgDataPtr;
                     value = static_cast<int64_t>(val);
                 }
+                case 16:
+                    cout << __FILE__<< ":" <<__LINE__ << " Fix for 16 Bytes ?" << endl;
             }
         }
         else
@@ -730,6 +732,8 @@ bool LBIDList::CasualPartitionPredicate(const int64_t Min,
                     int64_t val = *(int64_t*)MsgDataPtr;
                     value = val;
                 }
+                case 16:
+                    cout << __FILE__<< ":" <<__LINE__ << " Fix for 16 Bytes ?" << endl;
             }
         }
 

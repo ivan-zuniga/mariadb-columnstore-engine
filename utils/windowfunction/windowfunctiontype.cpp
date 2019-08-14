@@ -735,7 +735,8 @@ void* WindowFunctionType::getNullValueByType(int ct, int pos)
         case CalpontSystemCatalog::LONGDOUBLE:
             v = &longDoubleNull;
             break;
-
+        case CalpontSystemCatalog::BINARY:
+             cout << __FILE__<< ":" <<__LINE__ << " Fix for 16 Bytes ?" << endl;
         case CalpontSystemCatalog::VARBINARY:
         default:
             std::ostringstream oss;

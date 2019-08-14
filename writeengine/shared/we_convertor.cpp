@@ -425,6 +425,11 @@ void Convertor::convertColType(CalpontSystemCatalog::ColDataType dataType,
         case CalpontSystemCatalog::UBIGINT:
             internalType = WriteEngine::WR_ULONGLONG;
             break;
+        
+        // Map BINARY to WR_BINARY
+        case CalpontSystemCatalog::BINARY:
+            internalType = WriteEngine::WR_BINARY;
+            break;    
 
         default:
             internalType = WriteEngine::WR_CHAR;
@@ -654,6 +659,11 @@ void Convertor::convertColType(ColStruct* curStruct)
         case CalpontSystemCatalog::UBIGINT:
             *internalType = WriteEngine::WR_ULONGLONG;
             break;
+                    
+        // Map BINARY to WR_BINARY
+        case CalpontSystemCatalog::BINARY:
+            *internalType = WriteEngine::WR_BINARY;
+            break;  
 
         default:
             *internalType = WriteEngine::WR_CHAR;
@@ -743,7 +753,11 @@ int Convertor::getCorrectRowWidth(CalpontSystemCatalog::ColDataType dataType, in
         case CalpontSystemCatalog::TIME:
             newWidth = 8;
             break;
-
+        
+        case CalpontSystemCatalog::BINARY:
+            newWidth = width;
+            break;
+            
         case CalpontSystemCatalog::CHAR:
         case CalpontSystemCatalog::VARCHAR:
         case CalpontSystemCatalog::VARBINARY: // treat same as varchar for now

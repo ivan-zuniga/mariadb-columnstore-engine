@@ -237,7 +237,8 @@ enum DDL_DATATYPES
     DDL_UNSIGNED_NUMERIC,
     DDL_TEXT,
     DDL_TIME,
-    DDL_INVALID_DATATYPE
+    DDL_INVALID_DATATYPE,
+    DDL_BINARY
 };
 
 /** @brief Datatype string list
@@ -275,7 +276,8 @@ const std::string DDLDatatypeString[] =
     "unsigned-numeric",
     "text",
     "time"
-    ""
+    "",
+    "binary"
 };
 
 /** @brief Alter table action string list
