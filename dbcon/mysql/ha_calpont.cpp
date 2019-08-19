@@ -139,13 +139,13 @@ static HASH calpont_open_tables;
 pthread_mutex_t calpont_mutex;
 #endif
 
-//#ifdef DEBUG_ENTER
-//#undef DEBUG_ENTER
-//#endif
-//#ifdef DEBUG_RETURN
-//#undef DEBUG_ENTER
-//#endif
-//#define DEBUG_RETURN return
+#ifdef DEBUG_ENTER
+#undef DEBUG_ENTER
+#endif
+#ifdef DEBUG_RETURN
+#undef DEBUG_ENTER
+#endif
+#define DEBUG_RETURN return
 
 /**
   @brief

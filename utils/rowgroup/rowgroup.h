@@ -701,10 +701,7 @@ inline int64_t Row::getIntField(uint32_t colIndex) const
 
         case 8:
             return *((int64_t*) &data[offsets[colIndex]]);
-        case 16:
-            cout << __FILE__<< ":" <<__LINE__ << "REMOVE TMP HACK for 16 Bytes" << endl;
-            return *((int64_t*) &data[offsets[colIndex]]);
-            break;
+
         default:
             idbassert(0);
             throw std::logic_error("Row::getIntField(): bad length.");
@@ -727,10 +724,7 @@ inline int64_t Row::getIntField(uint32_t colIndex) const
 
         case 8:
             return *((int64_t*) &data[offsets[colIndex]]);
-        case 16:
-            cout << __FILE__<< __LINE__ << __func__<< endl;
-            return *((int64_t*) &data[offsets[colIndex]]);
-            break;
+
         default:
             idbassert(0);
             throw std::logic_error("Row::getIntField(): bad length.");

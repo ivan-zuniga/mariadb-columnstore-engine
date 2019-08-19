@@ -898,7 +898,7 @@ inline uint8_t* nextBinColValue(int type,
     return &val8[*rid * W];
 
 #ifdef PRIM_DEBUG
-            throw logic_error("PrimitiveProcessor::nextColValue() bad width");
+            throw logic_error("PrimitiveProcessor::nextColBinValue() bad width");
 #endif
             return NULL;
 }

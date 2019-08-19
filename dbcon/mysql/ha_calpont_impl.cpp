@@ -449,19 +449,19 @@ int fetchNextRow(uchar* buf, cal_table_info& ti, cal_connection_info* ci, bool h
             }
 
             // precision == -16 is borrowed as skip null check indicator for bit ops.
-//            if (row.isNullValue(s) && colType.precision != -16)
-//            {
-//                // @2835. Handle empty string and null confusion. store empty string for string column
-//                if (colType.colDataType == CalpontSystemCatalog::CHAR ||
-//                        colType.colDataType == CalpontSystemCatalog::VARCHAR ||
-//                        colType.colDataType == CalpontSystemCatalog::VARBINARY)
-//                {
-//                    Field_varstring* f2 = (Field_varstring*)*f;
-//                    f2->store(tmp, 0, f2->charset());
-//                }
-//
-//                continue;
-//            }
+            if (row.isNullValue(s) && colType.precision != -16)
+            {
+                // @2835. Handle empty string and null confusion. store empty string for string column
+                if (colType.colDataType == CalpontSystemCatalog::CHAR ||
+                        colType.colDataType == CalpontSystemCatalog::VARCHAR ||
+                        colType.colDataType == CalpontSystemCatalog::VARBINARY)
+                {
+                    Field_varstring* f2 = (Field_varstring*)*f;
+                    f2->store(tmp, 0, f2->charset());
+                }
+
+                continue;
+            }
 
             // fetch and store data
             switch (colType.colDataType)
