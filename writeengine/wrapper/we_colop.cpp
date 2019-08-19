@@ -123,7 +123,9 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
     newFile = false;
     Column newCol;
     unsigned char  buf[BYTE_PER_BLOCK];
-
+    unsigned char* curVal;
+    int64_t emptyVal = getEmptyRowValue(column.colDataType, column.colWidth); // Seems is ok have it here and just once  
+    
     if (useStartingExtent)
     {
         // ZZ. For insert select, skip the hwm block and start inserting from the next block
@@ -137,10 +139,10 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
 
             if ( rc != NO_ERROR)
                 return rc;
-
-            for (j = 0; j < totalRowPerBlock; j++)
+            
+            for (j = 0, curVal = buf; j < totalRowPerBlock; j++, curVal += column.colWidth)
             {
-                if (isEmptyRow(buf, j, column))
+                if (isEmptyRow((uint64_t*)curVal, emptyVal, column.colWidth))
                 {
                     rowIdArray[counter] = getRowId(hwm, column.colWidth, j);
                     rowsallocated++;
@@ -176,9 +178,9 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
 
                 RETURN_ON_ERROR(readBlock(column.dataFile.pFile, buf, hwm));
                 
-                        for (j = 0; j < totalRowPerBlock; j++)
+                for (j = 0, curVal = buf; j < totalRowPerBlock; j++, curVal += column.colWidth)
                 {
-                    if (isEmptyRow(buf, j, column))
+                    if (isEmptyRow((uint64_t*)curVal, emptyVal, column.colWidth))
                     {
                         rowIdArray[counter] = getRowId(hwm, column.colWidth, j);
                         rowsallocated++;
@@ -481,9 +483,9 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
             }
 
 
-            for (j = 0; j < totalRowPerBlock; j++)
-            {
-                if (isEmptyRow(buf, j, column))
+              for (j = 0, curVal = buf; j < totalRowPerBlock; j++, curVal += column.colWidth)
+              {
+                if (isEmptyRow((uint64_t*)curVal, emptyVal, column.colWidth)) // Why to check it if beacause line 483 is always true ?
                 {
                     rowIdArray[counter] = getRowId(newHwm, column.colWidth, j);
                     rowsallocated++;
@@ -509,9 +511,9 @@ int ColumnOp::allocRowId(const TxnID& txnid, bool useStartingExtent,
                     if ( rc != NO_ERROR)
                         return rc;
 
-                    for (j = 0; j < totalRowPerBlock; j++)
+                    for (j = 0, curVal = buf; j < totalRowPerBlock; j++, curVal += column.colWidth)
                     {
-                        if (isEmptyRow(buf, j, column))
+                        if (isEmptyRow((uint64_t*)curVal, emptyVal, column.colWidth))
                         {
                             rowIdArray[counter] = getRowId(newHwm, column.colWidth, j);
                             rowsallocated++;
@@ -1382,23 +1384,39 @@ void ColumnOp::initColumn(Column& column) const
  * RETURN:
  *    true if success, false otherwise
  ***********************************************************/
-bool ColumnOp::isEmptyRow(unsigned char* buf, int offset, const Column& column)
-{
-//    bool emptyFlag = true;
-//    uint64_t  curVal, emptyVal;
-//
-//    memcpy(&curVal, buf + offset * column.colWidth, column.colWidth);
-//    emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);
-//
-//    if (/*curVal != emptyVal*/memcmp(&curVal, &emptyVal, column.colWidth))
-//        emptyFlag = false;
-//
-//    return emptyFlag;
 
-    uint64_t emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);;
-    void *curVal = buf + offset * column.colWidth; 
-    uint64_t emptyVal4[4] = {emptyVal,emptyVal,emptyVal,emptyVal}; //uṕ to 32 Bytes
-    return memcmp(curVal, emptyVal4, column.colWidth)? false:true;  
+// It is called at just 4 places on allocRowId() but all the time inside extend scanning loops 
+inline bool ColumnOp::isEmptyRow(uint64_t* curVal, uint64_t emptyVal, const int colWidth)
+{
+    //Calling it here makes calling it "i" times from the calling loop at allocRowId()
+    //uint64_t emptyVal = getEmptyRowValue(column.colDataType, column.colWidth);
+    
+    // No need for it if change param type.. just been lazy to add extra castings 
+    //uint64_t &emptyVal = column.emptyVal;
+    
+    //no need to multiply over and over if just increment the pointer on the caller 
+    //uint64_t *curVal = (uint64_t*)(buf + offset * column.colWidth); 
+
+    switch(colWidth){
+        case 1:
+            return *(uint8_t*)curVal == emptyVal;
+
+        case 2:
+            return *(uint16_t*)curVal == emptyVal;
+        
+        case 4:
+            return *(uint32_t*)curVal == emptyVal;
+ 
+        case 8:
+            return *curVal == emptyVal;
+        
+        case 16:
+            return ((curVal[0] == emptyVal) && (curVal[1] == emptyVal)); 
+        
+        case 32:
+            return ((curVal[0] == emptyVal) && (curVal[1] == emptyVal)
+                && (curVal[2] == emptyVal) && (curVal[3] == emptyVal));         
+    }
 }
 
 /***********************************************************
@@ -1516,7 +1534,7 @@ void ColumnOp::setColParam(Column& column,
     column.colWidth = colWidth;
     column.colType = colType;
     column.colDataType = colDataType;
-
+    
     column.dataFile.fid = dataFid;
     column.dataFile.fDbRoot    = dbRoot;
     column.dataFile.fPartition = partition;
