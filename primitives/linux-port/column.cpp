@@ -1615,9 +1615,17 @@ inline void p_Col_bin_ridArray(NewColRequestHeader* in,
 
         regex[argIndex].used = false;
     }
-
-
     // else we have a pre-parsed filter, and it's an unordered set for quick == comparisons
+    else if (parsedColumnFilter->columnFilterMode == TWO_ARRAYS)
+    {
+        argVals = (binWtype*)parsedColumnFilter->prestored_argVals.get();
+        //uargVals = reinterpret_cast<uint64_t*>(parsedColumnFilter->prestored_argVals.get());
+        cops = parsedColumnFilter->prestored_cops.get();
+        rfs = parsedColumnFilter->prestored_rfs.get();
+        regex = parsedColumnFilter->prestored_regex.get();
+        likeOps = parsedColumnFilter->likeOps;
+
+    }
     bval = (binWtype*)nextBinColValue<W>(in->DataType, ridArray, in->NVALS, &nextRidIndex, &done, &isNull,
                 &isEmpty, &rid, in->OutputType, reinterpret_cast<uint8_t*>(block), itemsPerBlk);
 
@@ -1667,29 +1675,28 @@ inline void p_Col_bin_ridArray(NewColRequestHeader* in,
 
 //               if((*((uint64_t *) (uval))) != 0) cout << "comparing " << dec << (*((uint64_t *) (uval)))  << " to " << (*((uint64_t *) (argVals[argIndex])))  << endl;
 
-                int val1 = memcmp(*bval, &argVals[argIndex], W);
-
+                int val1 = memcmp(*bval, &argVals[argIndex], rfs[argIndex] > W ? rfs[argIndex] : W);
                 switch (cops[argIndex]) {
                     case COMPARE_NIL:
                         cmp = false;
                         break;
                     case COMPARE_LT:
-                        cmp = val1 < 0;
+                        cmp = val1 == 0 ? rfs[argIndex] < W : val1 < 0;
                         break;
                     case COMPARE_EQ:
-                        cmp = val1 == 0;
+                        cmp = rfs[argIndex] == W ? val1 == 0 : false;
                         break;
                     case COMPARE_LE:
-                        cmp = val1 <= 0;
+                        cmp = val1 == 0 ? rfs[argIndex] < W : val1 <= 0;
                         break;
                     case COMPARE_GT:
-                        cmp = val1 > 0;
+                        cmp = val1 == 0 ? rfs[argIndex] > W : val1 > 0;
                         break;
                     case COMPARE_NE:
-                        cmp = val1 != 0;
+                        cmp = val1 != 0 &&  rfs[argIndex] != W;
                         break;
                     case COMPARE_GE:
-                        cmp = val1 >= 0;
+                        cmp = val1 == 0 ? rfs[argIndex] > W : val1 >= 0;
                         break;
                     default:
                         logIt(34, cops[argIndex], "colCompare");
@@ -1839,7 +1846,7 @@ boost::shared_ptr<ParsedColumnFilter> parseColumnFilter
     ret.reset(new ParsedColumnFilter());
 
     ret->columnFilterMode = TWO_ARRAYS;
-    ret->prestored_argVals.reset(new int64_t[filterCount]);
+    ret->prestored_argVals.reset(new int64_t[colWidth <= 8 ? filterCount : filterCount * (colWidth / 8)]); // for 16 and 32 bytes widths allocate more space
     ret->prestored_cops.reset(new uint8_t[filterCount]);
     ret->prestored_rfs.reset(new uint8_t[filterCount]);
     ret->prestored_regex.reset(new idb_regex_t[filterCount]);
@@ -1898,7 +1905,17 @@ boost::shared_ptr<ParsedColumnFilter> parseColumnFilter
                     ret->prestored_argVals[argIndex] = *reinterpret_cast<const uint64_t*>(args->val);
                     break;  
                 case 16:
-                    cout << __FILE__<< ":" <<__LINE__ << " Fix for 16 Bytes ?" << endl;    
+                    ret->prestored_argVals[argIndex * 2] = *reinterpret_cast<const uint64_t*>(args->val);
+                    ret->prestored_argVals[(argIndex * 2) + 1] = *(reinterpret_cast<const uint64_t*>(args->val) + 1);
+                    cout << __FILE__<< ":" <<__LINE__ << " FILTERING Fix for BIN"<< colWidth << endl;
+                    break;
+                case 32:
+                    ret->prestored_argVals[argIndex * 4] = *reinterpret_cast<const uint64_t*>(args->val);
+                    ret->prestored_argVals[(argIndex * 4) + 1] = *(reinterpret_cast<const uint64_t*>(args->val) + 1);
+                    ret->prestored_argVals[(argIndex * 4) + 2] = *(reinterpret_cast<const uint64_t*>(args->val) + 2);
+                    ret->prestored_argVals[(argIndex * 4) + 3] = *(reinterpret_cast<const uint64_t*>(args->val) + 3);
+                    cout << __FILE__<< ":" <<__LINE__ << " FILTERING Fix for BIN"<< colWidth << endl;
+                    break;
             }
         }
         else
@@ -1935,7 +1952,8 @@ boost::shared_ptr<ParsedColumnFilter> parseColumnFilter
                     ret->prestored_argVals[argIndex] = *reinterpret_cast<const int64_t*>(args->val);
                     break;
                 case 16:
-                     cout << __FILE__<< ":" <<__LINE__ << " Fix for 16 Bytes ?" << endl;
+                case 32:
+                     cout << __FILE__<< ":" <<__LINE__ << " FILTERING for BINARY needed ? probably not" << endl;
             }
         }
 

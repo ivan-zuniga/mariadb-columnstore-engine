@@ -619,6 +619,18 @@ void pColStep::addFilter(int8_t COP, int64_t value, uint8_t roundFlag)
             fFilterString << *((uint64_t*) &value);
             break;
 
+        case 16: // a pointer comes here in value
+            fFilterString << *((uint64_t*) value);
+            fFilterString << *((uint64_t*) value + 1);
+            break;
+
+        case 32: // a pointer comes here in value
+            fFilterString << *((uint64_t*) value);
+            fFilterString << *((uint64_t*) value + 1);
+            fFilterString << *((uint64_t*) value + 2);
+            fFilterString << *((uint64_t*) value + 3);
+            break;
+
         default:
             ostringstream o;
 

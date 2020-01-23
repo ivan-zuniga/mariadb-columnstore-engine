@@ -379,6 +379,7 @@ public:
     void setStringField(const std::string& val, uint32_t colIndex);
     inline void setStringField(const uint8_t*, uint32_t len, uint32_t colIndex);
     inline void setBinaryField(const uint8_t* strdata, uint32_t length, uint32_t offset);
+    inline void setBinaryField(const std::string& val, uint32_t colIndex);
     // support VARBINARY
     // Add 2-byte length at the beginning of the field.  NULL and zero length field are
     // treated the same, could use one of the length bit to distinguish these two cases.
@@ -751,6 +752,11 @@ inline uint32_t Row::getStringLength(uint32_t colIndex) const
 inline void Row::setBinaryField(const uint8_t* strdata, uint32_t length, uint32_t offset)
 {
     memcpy(&data[offset], strdata, length);
+}
+
+inline void Row::setBinaryField(const std::string& val, uint32_t colIndex)
+{
+        memcpy(&data[offsets[colIndex]], val.data(), val.length());
 }
 
 inline void Row::setStringField(const uint8_t* strdata, uint32_t length, uint32_t colIndex)
@@ -1790,6 +1796,8 @@ inline void copyRow(const Row& in, Row* out, uint32_t colCount)
                      in.getColTypes()[i] == execplan::CalpontSystemCatalog::BLOB ||
                      in.getColTypes()[i] == execplan::CalpontSystemCatalog::TEXT))
             out->setVarBinaryField(in.getVarBinaryStringField(i), i);
+        else if (UNLIKELY(in.getColTypes()[i] == execplan::CalpontSystemCatalog::BINARY))
+            out->setBinaryField(in.getBinaryField(i), i);
         else if (UNLIKELY(in.isLongString(i)))
             //out->setStringField(in.getStringField(i), i);
             out->setStringField(in.getStringPointer(i), in.getStringLength(i), i);

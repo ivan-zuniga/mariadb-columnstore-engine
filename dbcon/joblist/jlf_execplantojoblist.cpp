@@ -301,6 +301,10 @@ int64_t valueNullNum(const CalpontSystemCatalog::ColType& ct)
 
             break;
 
+        case CalpontSystemCatalog::BINARY:
+            n = boost::any_cast<long long>(anyVal);
+            break;
+
         default:
             break;
     }
@@ -446,7 +450,6 @@ int64_t convertValueNum(const string& str, const CalpontSystemCatalog::ColType& 
                 v = boost::any_cast<long long>(anyVal);
 
             break;
-
         default:
             break;
     }
@@ -1877,7 +1880,12 @@ const JobStepVector doSimpleFilter(SimpleFilter* sf, JobInfo& jobInfo)
             }
 
 #endif
-
+            if(CalpontSystemCatalog::BINARY)
+            {
+                rf = constval.size() <= 255 ? constval.size() : 255; // hacky because need to pass length of string
+                constval.resize(ct.colWidth, 0);
+                value = ((uint64_t) constval.c_str()); // hacky because need to pass the pointer
+            }
             // @bug 2584, make "= null" to COMPARE_NIL.
             if (ConstantColumn::NULLDATA == cc->type() && (opeq == *sop || opne == *sop))
                 cop = COMPARE_NIL;

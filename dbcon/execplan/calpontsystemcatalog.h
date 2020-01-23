@@ -1011,6 +1011,7 @@ inline bool isUnsigned(const execplan::CalpontSystemCatalog::ColDataType type)
         case execplan::CalpontSystemCatalog::UMEDINT:
         case execplan::CalpontSystemCatalog::UINT:
         case execplan::CalpontSystemCatalog::UBIGINT:
+        case execplan::CalpontSystemCatalog::BINARY:
             return true;
 
         default:

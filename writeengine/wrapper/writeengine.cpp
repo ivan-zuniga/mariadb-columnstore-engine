@@ -390,7 +390,7 @@ void WriteEngineWrapper::convertValue(const ColType colType, void* value, boost:
         case WriteEngine::WR_BINARY:
         {
             char val = boost::any_cast<char>(data);
-            //TODO:FIXME how to determine size ? 16, 32,48 ?
+            //TODO:FIXME how to determine size ? 16, 32?
             size = 16;
             memcpy(value, &val, size);
         }

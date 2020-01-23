@@ -285,6 +285,7 @@ void ColumnCommand::process_OT_BOTH()
     switch (colType.colWidth)
     {
         case 16:
+        case 32:
             for (i = 0, pos = sizeof(NewColResultHeader); i < outMsg->NVALS; ++i)
             {
                 if (makeAbsRids)
@@ -296,13 +297,13 @@ void ColumnCommand::process_OT_BOTH()
                 // I dont know the liveness of bpp->outputMsg but also I dont know if there is other memory area I can use
                 values[i] = (int64_t) &bpp->outputMsg[pos];
              
-//                cout<< "CC:  BIN16 " << i << " " 
+//                cout<< "CC:  BIN" << colType.colWidth << " "<< i << " "
 //                        << hex 
 //                        << *((int64_t*)values[i])
 //                        << " "
 //                        << *(((int64_t*)values[i]) +1)
 //                        << endl;
-                pos += 16;
+                pos += colType.colWidth;
             }
 
             break;
@@ -602,11 +603,15 @@ void ColumnCommand::prep(int8_t outputType, bool absRids)
             mask = 0x01;
             break;
         case 16:
-            cout << __FILE__<< ":" <<__LINE__ << " Fix shift and mask for 16 Bytes ?"<< endl;
+            cout << __FILE__<< ":" <<__LINE__ << " Fix shift ? and mask ? for 16 Bytes ?"<< endl;
             shift = 1;
             mask = 0x01;
             break;
-            
+        case 32:
+            cout << __FILE__<< ":" <<__LINE__ << " Fix shift ? and mask ? for 32 Bytes ?"<< endl;
+            shift = 1;
+            mask = 0x01;
+            break;
         default:
             cout << "CC: colWidth is " << colType.colWidth << endl;
             throw logic_error("ColumnCommand: bad column width?");

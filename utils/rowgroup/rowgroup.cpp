@@ -963,10 +963,12 @@ bool Row::isNullValue(uint32_t colIndex) const
         {
             // When is null? I dont know. Wait for bitmap null empty implemtenttion ? 
             // Also still pendig rework discussed use pointers for empty null values
-            
-            cout << __FILE__<< ":" << __LINE__ << " isNullValue  value " << (*((uint64_t*) &data[offsets[colIndex]])) << endl;  
-            //return false; 
-            return (*((uint64_t*) &data[offsets[colIndex]]) == joblist::BINARYEMPTYROW);
+            uint8_t* s = &data[offsets[colIndex]];  // start
+            uint32_t p = colWidths[colIndex]; // position
+            bool r = true; // return value
+            while(p -= 8 >= 0)
+              r &= *(uint64_t*) (s + p) == joblist::BINARYNULL;
+            return r;
         }
        
         default:
